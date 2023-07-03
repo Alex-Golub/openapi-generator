@@ -32,9 +32,6 @@ import org.apache.commons.lang3.Validate;
 import org.openapitools.codegen.*;
 import org.openapitools.codegen.api.TemplatingEngineAdapter;
 import org.openapitools.codegen.auth.AuthParser;
-import org.openapitools.codegen.languages.*;
-import org.openapitools.codegen.templating.HandlebarsEngineAdapter;
-import org.openapitools.codegen.templating.MustacheEngineAdapter;
 import org.openapitools.codegen.utils.ModelUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -661,15 +658,15 @@ public class CodegenConfigurator implements Serializable {
                 + "\n - [debugOperations] prints operations passed to the template engine"
                 + "\n - [debugSupportingFiles] prints additional data passed to the template engine");
 
-        GeneratorProperties.setProperty("debugOpenAPI", "");
-        GeneratorProperties.setProperty("debugModels", "");
-        GeneratorProperties.setProperty("debugOperations", "");
-        GeneratorProperties.setProperty("debugSupportingFiles", "");
+        GlobalSettings.setProperty("debugOpenAPI", "");
+        GlobalSettings.setProperty("debugModels", "");
+        GlobalSettings.setProperty("debugOperations", "");
+        GlobalSettings.setProperty("debugSupportingFiles", "");
     }
 
     private void setSystemProperties() {
         for (Map.Entry<String, String> entry : systemProperties.entrySet()) {
-            GeneratorProperties.setProperty(entry.getKey(), entry.getValue());
+            GlobalSettings.setProperty(entry.getKey(), entry.getValue());
         }
     }
 

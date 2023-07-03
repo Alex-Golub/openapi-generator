@@ -26,7 +26,7 @@ import java.util.Properties;
  * @author gndrm
  * @since 2018
  */
-public class GeneratorProperties {
+public class GlobalSettings {
 
     private static ThreadLocal<Properties> properties = new InheritableThreadLocal<Properties>() {
         @Override

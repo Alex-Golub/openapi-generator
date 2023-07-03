@@ -19,6 +19,8 @@ package org.openapitools.codegen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CaseFormat;
+import com.google.common.collect.ImmutableMap;
+import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -42,12 +44,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.openapitools.codegen.CodegenDiscriminator.MappedModel;
 import org.openapitools.codegen.api.TemplatingEngineAdapter;
-import org.openapitools.codegen.config.GeneratorProperties;
+import org.openapitools.codegen.config.GlobalSettings;
 import org.openapitools.codegen.examples.ExampleGenerator;
 import org.openapitools.codegen.meta.GeneratorMetadata;
 import org.openapitools.codegen.meta.Stability;
 import org.openapitools.codegen.serializer.SerializerUtils;
 import org.openapitools.codegen.templating.MustacheEngineAdapter;
+import org.openapitools.codegen.templating.mustache.*;
 import org.openapitools.codegen.utils.ModelUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +63,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.openapitools.codegen.utils.StringUtils.*;
+import static org.openapitools.codegen.utils.StringUtils.camelize;
+import static org.openapitools.codegen.utils.StringUtils.escape;
+import static org.openapitools.codegen.utils.StringUtils.underscore;
 
 public class DefaultCodegen implements CodegenConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCodegen.class);
@@ -199,6 +204,23 @@ public class DefaultCodegen implements CodegenConfig {
         }
     }
 
+    protected ImmutableMap.Builder<String, Mustache.Lambda> addMustacheLambdas() {
+        return (new ImmutableMap.Builder()).put("lowercase", (new LowercaseLambda()).generator(this)).put("uppercase", new UppercaseLambda()).put("titlecase", new TitlecaseLambda()).put("camelcase", (new CamelCaseLambda()).generator(this)).put("indented", new IndentedLambda()).put("indented_8", new IndentedLambda(8, " ")).put("indented_12", new IndentedLambda(12, " ")).put("indented_16", new IndentedLambda(16, " "));
+    }
+
+    private void registerMustacheLambdas() {
+        ImmutableMap<String, Mustache.Lambda> lambdas = this.addMustacheLambdas().build();
+        if (lambdas.size() != 0) {
+            if (this.additionalProperties.containsKey("lambda")) {
+                LOGGER.warn("A property named 'lambda' already exists. Mustache lambdas renamed from 'lambda' to '_lambda'. You'll likely need to use a custom template, see https://github.com/OpenAPITools/openapi-generator/blob/master/docs/templating.md. ");
+                this.additionalProperties.put("_lambda", lambdas);
+            } else {
+                this.additionalProperties.put("lambda", lambdas);
+            }
+        }
+
+    }
+    
     // override with any special post-processing for all models
     @SuppressWarnings({"static-method", "unchecked"})
     public Map<String, Object> postProcessAllModels(Map<String, Object> objs) {
@@ -894,7 +916,7 @@ public class DefaultCodegen implements CodegenConfig {
      * @return the sanitized parameter name
      */
     public String toParamName(String name) {
-        name = removeNonNameElementToCamelCase(name); // FIXME: a parameter should not be assigned. Also declare the methods parameters as 'final'.
+        name = removeNonNameElementToCamelCase(name, false); // FIXME: a parameter should not be assigned. Also declare the methods parameters as 'final'.
         if (reservedWords.contains(name)) {
             return escapeReservedWord(name);
         } else if (((CharSequence) name).chars().anyMatch(character -> specialCharReplacements.keySet().contains("" + ((char) character)))) {
@@ -1060,6 +1082,7 @@ public class DefaultCodegen implements CodegenConfig {
 
         // initialize special character mapping
         initalizeSpecialCharacterMapping();
+        this.registerMustacheLambdas();
     }
 
     /**
@@ -2455,7 +2478,7 @@ public class DefaultCodegen implements CodegenConfig {
                 operationId = operationId.substring(offset + 1);
             }
         }
-        operationId = removeNonNameElementToCamelCase(operationId);
+        operationId = removeNonNameElementToCamelCase(operationId, true);
 
         if (isStrictSpecBehavior() && !path.startsWith("/")) {
             // modifies an operation.path to strictly conform to OpenAPI Spec
@@ -2942,7 +2965,7 @@ public class DefaultCodegen implements CodegenConfig {
         }
         codegenParameter.jsonSchema = Json.pretty(parameter);
 
-        if (GeneratorProperties.getProperty("debugParser") != null) {
+        if (GlobalSettings.getProperty("debugParser") != null) {
             LOGGER.info("working on Parameter " + parameter.getName());
             LOGGER.info("JSON schema: " + codegenParameter.jsonSchema);
         }
@@ -3701,11 +3724,12 @@ public class DefaultCodegen implements CodegenConfig {
      * Remove characters not suitable for variable or method name from the input and camelize it
      *
      * @param name string to be camelize
+     * @param isOperationId if isOperationId true then ignore underscores otherwise 
      * @return camelized string
      */
     @SuppressWarnings("static-method")
-    public String removeNonNameElementToCamelCase(String name) {
-        return removeNonNameElementToCamelCase(name, "[-_:;#]");
+    public String removeNonNameElementToCamelCase(String name, boolean isOperationId) {
+        return removeNonNameElementToCamelCase(name, isOperationId ? "[-:;#]" : "[-_:;#]");
     }
 
     /**
