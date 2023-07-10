@@ -102,6 +102,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
     private boolean debugging = false;
 
     private HttpHeaders defaultHeaders = new HttpHeaders();
+
     private MultiValueMap<String, String> defaultCookies = new LinkedMultiValueMap<String, String>();
 
     private String basePath = "{{basePath}}";
@@ -110,6 +111,10 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
 
     private Map<String, Authentication> authentications;
 
+    private HttpStatus statusCode;
+
+    private MultiValueMap<String, String> responseHeaders;
+    
     private DateFormat dateFormat;
 
     public ApiClient() {
@@ -164,6 +169,22 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
     public ApiClient setBasePath(String basePath) {
         this.basePath = basePath;
         return this;
+    }
+
+    /**
+     * Gets the status code of the previous request
+     * @return HttpStatus the status code
+     */
+    public HttpStatus getStatusCode() {
+        return statusCode;
+    }
+
+    /**
+     * Gets the response headers of the previous request
+     * @return MultiValueMap a map of response headers
+     */
+    public MultiValueMap<String, String> getResponseHeaders() {
+        return responseHeaders;
     }
 
     /**
@@ -712,12 +733,20 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         RequestEntity<Object> requestEntity = requestBuilder.body(selectBody(body, formParams, contentType));
 
         ResponseEntity<T> responseEntity = restTemplate.exchange(requestEntity, returnType);
+        
+        statusCode = responseEntity.getStatusCode();
+        responseHeaders = responseEntity.getHeaders();
 
-        if (responseEntity.getStatusCode().is2xxSuccessful()) {
+        if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
+            return null;
+        } else if (responseEntity.getStatusCode().is2xxSuccessful()) {
+            if (returnType == null) {
+                return null;
+            }
             return responseEntity;
         } else {
             // The error handler built into the RestTemplate should handle 400 and 500 series errors.
-            throw new RestClientException("API returned " + responseEntity.getStatusCode() + " and it wasn't handled by the RestTemplate error handler");
+            throw new RestClientException("API returned " + statusCode + " and it wasn't handled by the RestTemplate error handler");
         }
     }
 

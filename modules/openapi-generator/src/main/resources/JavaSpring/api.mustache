@@ -97,7 +97,7 @@ import {{javaxPackage}}.annotation.Generated;
 @Tag(name = "{{{tagName}}}", description = {{#tagDescription}}"{{{.}}}"{{/tagDescription}}{{^tagDescription}}"the {{{tagName}}} API"{{/tagDescription}})
 {{/swagger2AnnotationLibrary}}
 {{#swagger1AnnotationLibrary}}
-@Api(value = "{{{tagName}}}", description = {{#tagDescription}}"{{{.}}}"{{/tagDescription}}{{^tagDescription}}"the {{{tagName}}} API"{{/tagDescription}})
+@Api(value = "{{{baseClassName}}}", description = {{#tagDescription}}"{{{.}}}"{{/tagDescription}}{{^tagDescription}}"the {{{baseClassName}}} API"{{/tagDescription}})
 {{/swagger1AnnotationLibrary}}
 {{#operations}}
 {{#virtualService}}

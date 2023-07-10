@@ -169,7 +169,9 @@ public class StringUtils {
 
             // Remove all underscores (underscore_case to camelCase)
             m = camelizeUnderscorePattern.matcher(word);
-            while (m.find()) {
+            
+            // (gen-workaround)
+            while (m.find() && word.charAt(0) == '_') {
                 String original = m.group(2);
                 String upperCase = original.toUpperCase(Locale.ROOT);
                 if (original.equals(upperCase)) {
@@ -177,7 +179,9 @@ public class StringUtils {
                 } else {
                     word = m.replaceFirst(upperCase);
                 }
-                m = camelizeUnderscorePattern.matcher(word);
+                
+                // (gen-workaround)
+                camelizeUnderscorePattern.matcher(word);
             }
 
             // Remove all hyphens (hyphen-case to camelCase)
@@ -197,7 +201,8 @@ public class StringUtils {
             }
 
             // remove all underscore
-            word = camelizeSimpleUnderscorePattern.matcher(word).replaceAll("");
+            // (gen-workaround)
+//            word = camelizeSimpleUnderscorePattern.matcher(word).replaceAll("");
             return word;
         });
     }

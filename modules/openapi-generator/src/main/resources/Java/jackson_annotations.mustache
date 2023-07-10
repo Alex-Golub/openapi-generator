@@ -5,7 +5,6 @@
  * Else use custom behaviour, IOW use whatever is defined on the object mapper
  }}
   @JsonProperty(JSON_PROPERTY_{{nameInSnakeCase}})
-  @JsonInclude({{#isMap}}{{#items.isNullable}}content = JsonInclude.Include.ALWAYS, {{/items.isNullable}}{{/isMap}}value = JsonInclude.Include.{{#required}}ALWAYS{{/required}}{{^required}}USE_DEFAULTS{{/required}})
   {{#withXml}}
     {{^isContainer}}
   @JacksonXmlProperty({{#isXmlAttribute}}isAttribute = true, {{/isXmlAttribute}}{{#xmlNamespace}}namespace="{{.}}", {{/xmlNamespace}}localName = "{{xmlName}}{{^xmlName}}{{baseName}}{{/xmlName}}")

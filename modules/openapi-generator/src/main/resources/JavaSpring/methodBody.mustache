@@ -7,8 +7,7 @@ return CompletableFuture.supplyAsync(()-> {
 {{#async}}    {{/async}}            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
     {{/-first}}
 {{#async}}        {{/async}}{{^async}}    {{/async}}            if (mediaType.isCompatibleWith(MediaType.valueOf("{{{contentType}}}"))) {
-{{#async}}        {{/async}}{{^async}}    {{/async}}                String exampleString = {{>exampleString}};
-{{#async}}        {{/async}}{{^async}}    {{/async}}                ApiUtil.setExampleResponse(request, "{{{contentType}}}", exampleString);
+{{#async}}        {{/async}}{{^async}}    {{/async}}                ApiUtil.setExampleResponse(request, "{{{contentType}}}", "{}");
 {{#async}}        {{/async}}{{^async}}    {{/async}}                break;
 {{#async}}        {{/async}}{{^async}}    {{/async}}            }
     {{#-last}}
@@ -38,8 +37,7 @@ Mono<Void> result = Mono.empty();
         for (MediaType mediaType : exchange.getRequest().getHeaders().getAccept()) {
         {{/-first}}
             if (mediaType.isCompatibleWith(MediaType.valueOf("{{{contentType}}}"))) {
-                String exampleString = {{>exampleString}};
-                result = ApiUtil.getExampleResponse(exchange, mediaType, exampleString);
+                result = ApiUtil.getExampleResponse(exchange, mediaType, "{}");
                 break;
             }
         {{#-last}}

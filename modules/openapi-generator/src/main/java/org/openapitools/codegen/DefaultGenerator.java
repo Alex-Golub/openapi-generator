@@ -33,22 +33,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.comparator.PathFileComparator;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.openapitools.codegen.api.TemplateDefinition;
-import org.openapitools.codegen.api.TemplatePathLocator;
-import org.openapitools.codegen.api.TemplateProcessor;
+import org.openapitools.codegen.api.*;
 import org.openapitools.codegen.config.GlobalSettings;
-import org.openapitools.codegen.api.TemplatingEngineAdapter;
-import org.openapitools.codegen.api.TemplateFileType;
 import org.openapitools.codegen.ignore.CodegenIgnoreProcessor;
-import org.openapitools.codegen.languages.PythonPriorClientCodegen;
 import org.openapitools.codegen.languages.PythonClientCodegen;
+import org.openapitools.codegen.languages.PythonPriorClientCodegen;
 import org.openapitools.codegen.meta.GeneratorMetadata;
 import org.openapitools.codegen.meta.Stability;
-import org.openapitools.codegen.model.ApiInfoMap;
-import org.openapitools.codegen.model.ModelMap;
-import org.openapitools.codegen.model.ModelsMap;
-import org.openapitools.codegen.model.OperationMap;
-import org.openapitools.codegen.model.OperationsMap;
+import org.openapitools.codegen.model.*;
 import org.openapitools.codegen.serializer.SerializerUtils;
 import org.openapitools.codegen.templating.CommonTemplateContentLocator;
 import org.openapitools.codegen.templating.GeneratorTemplateContentLocator;
@@ -61,7 +53,8 @@ import org.openapitools.codegen.utils.URLPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -598,17 +591,25 @@ public class DefaultGenerator implements Generator {
             }
             paths = updatedPaths;
         }
-        for (String tag : paths.keySet()) {
-            try {
-                List<CodegenOperation> ops = paths.get(tag);
-                ops.sort((one, another) -> ObjectUtils.compare(one.operationId, another.operationId));
-                OperationsMap operation = processOperations(config, tag, ops, allModels);
-                URL url = URLPathUtils.getServerURL(openAPI, config.serverVariableOverrides());
-                operation.put("basePath", basePath);
-                operation.put("basePathWithoutHost", removeTrailingSlash(config.encodePath(url.getPath())));
-                operation.put("contextPath", contextPath);
-                operation.put("baseName", tag);
-                Optional.ofNullable(openAPI.getTags()).orElseGet(Collections::emptyList).stream()
+
+        // Combine all paths into single interface (gen-workaround)
+        List<CodegenOperation> ops = paths.values().stream()
+                                          .flatMap(Collection::stream)
+                                          .collect(Collectors.toList());
+        String inputSpec = StringUtils.capitalize(FilenameUtils.getBaseName(config.getInputSpec()));
+        final String tag = inputSpec == null ? "Default" : inputSpec;
+
+//        for (String tag : paths.keySet()) {
+        try {
+//                List<CodegenOperation> ops = paths.get(tag);
+            ops.sort((one, another) -> ObjectUtils.compare(one.operationId, another.operationId));
+            OperationsMap operation = processOperations(config, tag, ops, allModels);
+            URL url = URLPathUtils.getServerURL(openAPI, config.serverVariableOverrides());
+            operation.put("basePath", basePath);
+            operation.put("basePathWithoutHost", removeTrailingSlash(config.encodePath(url.getPath())));
+            operation.put("contextPath", contextPath);
+            operation.put("baseName", tag);
+            Optional.ofNullable(openAPI.getTags()).orElseGet(Collections::emptyList).stream()
                         .map(Tag::getName)
                         .filter(Objects::nonNull)
                         .filter(tag::equalsIgnoreCase)
@@ -626,6 +627,7 @@ public class DefaultGenerator implements Generator {
                 operation.put("modelPackage", config.modelPackage());
                 operation.putAll(config.additionalProperties());
                 operation.put("classname", config.toApiName(tag));
+                operation.put("baseClassName", config.toApiName(tag).replaceAll("Api$", ""));
                 operation.put("classVarName", config.toApiVarName(tag));
                 operation.put("importPath", config.toApiImport(tag));
                 operation.put("classFilename", config.toApiFilename(tag));
@@ -716,7 +718,7 @@ public class DefaultGenerator implements Generator {
             } catch (Exception e) {
                 throw new RuntimeException("Could not generate api file for '" + tag + "'", e);
             }
-        }
+//        }
         if (GlobalSettings.getProperty("debugOperations") != null) {
             LOGGER.info("############ Operation info ############");
             Json.prettyPrint(allOperations);

@@ -202,17 +202,6 @@ public class {{classname}} {{#parent}}extends {{{.}}} {{/parent}}{{#vendorExtens
 {{#deprecated}}
   @Deprecated
 {{/deprecated}}
-{{#required}}
-{{#isNullable}}
-  @{{javaxPackage}}.annotation.Nullable
-{{/isNullable}}
-{{^isNullable}}
-  @{{javaxPackage}}.annotation.Nonnull
-{{/isNullable}}
-{{/required}}
-{{^required}}
-  @{{javaxPackage}}.annotation.Nullable
-{{/required}}
 {{#jsonb}}
   @JsonbProperty("{{baseName}}")
 {{/jsonb}}
