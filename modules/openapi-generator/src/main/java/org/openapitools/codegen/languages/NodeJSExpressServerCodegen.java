@@ -410,7 +410,7 @@ public class NodeJSExpressServerCodegen extends DefaultCodegen implements Codege
     }
 
     @Override
-    public String removeNonNameElementToCamelCase(String name) {
+    public String removeNonNameElementToCamelCase(String name, boolean isOperationId) {
         return removeNonNameElementToCamelCase(name, "[-:;#]");
     }
 

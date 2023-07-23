@@ -1601,7 +1601,7 @@ public class DefaultCodegen implements CodegenConfig {
      */
     @Override
     public String toParamName(String name) {
-        name = removeNonNameElementToCamelCase(name); // FIXME: a parameter should not be assigned. Also declare the methods parameters as 'final'.
+        name = removeNonNameElementToCamelCase(name, false); // FIXME: a parameter should not be assigned. Also declare the methods parameters as 'final'.
         if (reservedWords.contains(name)) {
             return escapeReservedWord(name);
         } else if (name.chars().anyMatch(character -> specialCharReplacements.containsKey(String.valueOf((char) character)))) {
@@ -4347,7 +4347,7 @@ public class DefaultCodegen implements CodegenConfig {
                 operationId = String.join(removeOperationIdPrefixDelimiter, Arrays.copyOfRange(components, component_number, components.length));
             }
         }
-        operationId = removeNonNameElementToCamelCase(operationId);
+        operationId = removeNonNameElementToCamelCase(operationId, true);
 
         if (isStrictSpecBehavior() && !path.startsWith("/")) {
             // modifies an operation.path to strictly conform to OpenAPI Spec
@@ -5854,11 +5854,19 @@ public class DefaultCodegen implements CodegenConfig {
      * Remove characters not suitable for variable or method name from the input and camelize it
      *
      * @param name string to be camelize
+     * @param isOperationId whether the input is an operationId if true then underscores are allowed
      * @return camelized string
      */
     @SuppressWarnings("static-method")
-    public String removeNonNameElementToCamelCase(String name) {
-        return removeNonNameElementToCamelCase(name, "[-_:;#" + removeOperationIdPrefixDelimiter + "]");
+    public String removeNonNameElementToCamelCase(String name, boolean isOperationId) {
+        String nonNameElementPattern;
+        if (isOperationId) {
+            nonNameElementPattern = "[-:;#]";
+        } else {
+            nonNameElementPattern = "[-_:;#" + removeOperationIdPrefixDelimiter + "]";
+        }
+
+        return removeNonNameElementToCamelCase(name, nonNameElementPattern);
     }
 
     /**
