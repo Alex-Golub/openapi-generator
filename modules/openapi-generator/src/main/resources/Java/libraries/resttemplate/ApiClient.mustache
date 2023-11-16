@@ -737,12 +737,7 @@ public class ApiClient{{#jsr310}} extends JavaTimeFormatter{{/jsr310}} {
         statusCode = responseEntity.getStatusCode();
         responseHeaders = responseEntity.getHeaders();
 
-        if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
-            return null;
-        } else if (responseEntity.getStatusCode().is2xxSuccessful()) {
-            if (returnType == null) {
-                return null;
-            }
+        if (responseEntity.getStatusCode().is2xxSuccessful()) {
             return responseEntity;
         } else {
             // The error handler built into the RestTemplate should handle 400 and 500 series errors.
